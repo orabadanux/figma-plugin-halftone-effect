@@ -1,0 +1,8 @@
+{
+  "name": "Halftone Effect Plugin",
+  "id": "halftone-effect-plugin",
+  "api": "1.0.0",
+  "main": "dist/plugin/code.js",
+  "ui": "dist/ui/index.html",
+  "editorType": ["figma"]
+}
