@@ -2,7 +2,7 @@
   figma.showUI(__html__, { width: 420, height: 550 });
   console.log("🔹 Plugin UI opened");
 
-  // Show initial UI state (waiting for selection)
+  // Send initial UI state (no image)
   figma.ui.postMessage({ type: "no-image" });
 
   // Listen for selection changes

@@ -5,7 +5,7 @@ import { resolve } from "path";
 const isPluginBuild = process.env.BUILD_TARGET === "plugin";
 
 export default defineConfig({
-  plugins: isPluginBuild ? [] : [react()], // ✅ Include React plugin for UI
+  plugins: isPluginBuild ? [] : [react()], // ✅ Use React plugin for UI only
   build: {
     outDir: isPluginBuild ? "dist/plugin" : "dist/ui",
     emptyOutDir: isPluginBuild, // ✅ Only clear when building the plugin
@@ -25,7 +25,11 @@ export default defineConfig({
           },
         }
       : {
-          input: resolve(__dirname, "index.html"), // ✅ Entry point for UI build
+          input: resolve(__dirname, "index.html"),
+          output: {
+            entryFileNames: "ui.js",  // ✅ Force the UI JS file to be named `ui.js`
+            assetFileNames: "ui.css", // ✅ Force CSS to be `ui.css` instead of hashed
+          },
         },
   },
 });
