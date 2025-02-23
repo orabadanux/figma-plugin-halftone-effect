@@ -1,13 +1,24 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Halftone Effect</title>
-    <link rel="stylesheet" href="./ui.css"> <!-- ✅ Ensure UI styles load -->
-</head>
-<body>
-    <div id="root"></div>
-    <script type="module" src="./ui.js"></script> <!-- ✅ Ensure UI script loads -->
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Halftone Effect Plugin UI</title>
+  </head>
+  <body>
+    <h1>Halftone Effect Plugin UI</h1>
+    <div id="content">Waiting for image...</div>
+    <script>
+      window.onmessage = (event) => {
+        const msg = event.data.pluginMessage;
+        console.log("UI received message:", msg);
+        if (msg && msg.type === "load-image") {
+          document.getElementById("content").innerHTML =
+            '<img src="data:image/png;base64,' + msg.data + '" style="max-width:100%;"/>';
+        } else if (msg && msg.type === "no-image") {
+          document.getElementById("content").innerText = "No image selected.";
+        }
+      };
+    </script>
+  </body>
 </html>

@@ -1,6 +1,35 @@
-console.log("🎨 UI Script Loaded!");
 import React, { useEffect, useState } from "react";
-import "./App.css"; // Optional styling
+
+const styles = {
+  container: {
+    padding: "10px",
+    fontFamily: "Arial, sans-serif",
+    textAlign: "center" as const,
+  },
+  placeholder: {
+    padding: "20px",
+    border: "2px dashed #888",
+    borderRadius: "10px",
+    background: "#f4f4f4",
+    color: "#555",
+    fontSize: "16px",
+    marginBottom: "20px",
+  },
+  image: {
+    maxWidth: "100%",
+    borderRadius: "8px",
+  },
+  button: {
+    padding: "10px 20px",
+    fontSize: "16px",
+    border: "none",
+    background: "#007bff",
+    color: "white",
+    borderRadius: "5px",
+    cursor: "pointer",
+    marginTop: "10px",
+  },
+};
 
 const App = () => {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
@@ -35,19 +64,17 @@ const App = () => {
   };
 
   return (
-    <div className="container">
+    <div style={styles.container}>
       <h2>Halftone Effect</h2>
 
-      {/* Show placeholder if no image is selected */}
       {!imageSrc ? (
-        <div className="placeholder">
+        <div style={styles.placeholder}>
           <p>📌 Select an image in Figma to start</p>
         </div>
       ) : (
-        <img id="previewCanvas" src={imageSrc} alt="Preview" />
+        <img id="previewCanvas" src={imageSrc} alt="Preview" style={styles.image} />
       )}
 
-      {/* Sliders */}
       <label>Grid Size: {gridSize}</label>
       <input type="range" min="1" max="100" value={gridSize} onChange={(e) => setGridSize(Number(e.target.value))} />
 
@@ -68,7 +95,7 @@ const App = () => {
         <option value="noise">Noise</option>
       </select>
 
-      <button onClick={applyEffect}>Apply</button>
+      <button style={styles.button} onClick={applyEffect}>Apply</button>
     </div>
   );
 };

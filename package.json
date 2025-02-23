@@ -4,13 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "npm run build:ui && npm run build:plugin",
-    "build:ui": "vite build",
-    "build:plugin": "cross-env BUILD_TARGET=plugin vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
-  },
+  "dev": "vite",
+  "build": "npm run build:ui && npm run build:plugin",
+  "build:ui": "vite build",
+  "build:plugin": "cross-env BUILD_TARGET=plugin vite build",
+  "lint": "eslint .",
+  "preview": "vite preview"
+},
   "dependencies": {
     "buffer": "^6.0.3",
     "react": "^19.0.0",

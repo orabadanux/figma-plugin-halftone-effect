@@ -1,3 +1,4 @@
+// vite.config.ts
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { resolve } from "path";
@@ -5,10 +6,11 @@ import { resolve } from "path";
 const isPluginBuild = process.env.BUILD_TARGET === "plugin";
 
 export default defineConfig({
-  plugins: isPluginBuild ? [] : [react()], // ✅ Use React plugin for UI only
+  plugins: isPluginBuild ? [] : [react()],
   build: {
+    target: "chrome58", // Transpile code to a version compatible with Figma's runtime
     outDir: isPluginBuild ? "dist/plugin" : "dist/ui",
-    emptyOutDir: isPluginBuild, // ✅ Only clear when building the plugin
+    emptyOutDir: isPluginBuild, // Clears dist/plugin only when building plugin
     lib: isPluginBuild
       ? {
           entry: resolve(__dirname, "src/code.ts"),
@@ -27,8 +29,7 @@ export default defineConfig({
       : {
           input: resolve(__dirname, "index.html"),
           output: {
-            entryFileNames: "ui.js",  // ✅ Force the UI JS file to be named `ui.js`
-            assetFileNames: "ui.css", // ✅ Force CSS to be `ui.css` instead of hashed
+            entryFileNames: "ui.js", // Forces the UI JS file to be named "ui.js"
           },
         },
   },
