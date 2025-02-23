@@ -1,24 +1,207 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <title>Halftone Effect Plugin UI</title>
+    <style>
+      body { font-family: sans-serif; margin: 10px; }
+      #root { max-width: 600px; margin: auto; }
+      canvas { border: 1px solid #ddd; display: block; margin: 10px 0; max-width: 100%; }
+      .slider-container { margin: 10px 0; }
+      label { display: block; margin-bottom: 4px; }
+      input[type="range"] { width: 100%; }
+      button { padding: 8px 16px; font-size: 16px; }
+    </style>
   </head>
   <body>
-    <h1>Halftone Effect Plugin UI</h1>
-    <div id="content">Waiting for image...</div>
+    <div id="root">
+      <h1>Halftone Effect Plugin UI</h1>
+      <div id="placeholder">No image selected.</div>
+    </div>
+
     <script>
+      // --- Inlined UI Logic for Figma Plugin ---
+      
+      // Global variables for image and UI elements
+      let originalImage = null;
+      let canvas, ctx;
+      let sliderGrid, sliderBrightness, sliderContrast, sliderGamma, selectDithering, btnGenerate;
+
+      // Function to set up the UI once an image is loaded
+      function setupUI() {
+        const root = document.getElementById("root");
+        // Clear any previous content
+        root.innerHTML = "<h1>Halftone Effect Plugin UI</h1>";
+        
+        // Create and append canvas
+        canvas = document.createElement("canvas");
+        canvas.id = "previewCanvas";
+        root.appendChild(canvas);
+        ctx = canvas.getContext("2d");
+
+        // Create controls container
+        const controls = document.createElement("div");
+        controls.id = "controls";
+
+        // Grid Size slider
+        const gridContainer = document.createElement("div");
+        gridContainer.className = "slider-container";
+        const labelGrid = document.createElement("label");
+        labelGrid.innerText = "Grid Size:";
+        sliderGrid = document.createElement("input");
+        sliderGrid.type = "range";
+        sliderGrid.min = "1";
+        sliderGrid.max = "100";
+        sliderGrid.value = "50";
+        gridContainer.appendChild(labelGrid);
+        gridContainer.appendChild(sliderGrid);
+        controls.appendChild(gridContainer);
+
+        // Brightness slider
+        const brightnessContainer = document.createElement("div");
+        brightnessContainer.className = "slider-container";
+        const labelBrightness = document.createElement("label");
+        labelBrightness.innerText = "Brightness:";
+        sliderBrightness = document.createElement("input");
+        sliderBrightness.type = "range";
+        sliderBrightness.min = "0";
+        sliderBrightness.max = "100";
+        sliderBrightness.value = "50";
+        brightnessContainer.appendChild(labelBrightness);
+        brightnessContainer.appendChild(sliderBrightness);
+        controls.appendChild(brightnessContainer);
+
+        // Contrast slider
+        const contrastContainer = document.createElement("div");
+        contrastContainer.className = "slider-container";
+        const labelContrast = document.createElement("label");
+        labelContrast.innerText = "Contrast:";
+        sliderContrast = document.createElement("input");
+        sliderContrast.type = "range";
+        sliderContrast.min = "-100";
+        sliderContrast.max = "100";
+        sliderContrast.value = "0";
+        contrastContainer.appendChild(labelContrast);
+        contrastContainer.appendChild(sliderContrast);
+        controls.appendChild(contrastContainer);
+
+        // Gamma slider
+        const gammaContainer = document.createElement("div");
+        gammaContainer.className = "slider-container";
+        const labelGamma = document.createElement("label");
+        labelGamma.innerText = "Gamma:";
+        sliderGamma = document.createElement("input");
+        sliderGamma.type = "range";
+        sliderGamma.min = "0.1";
+        sliderGamma.max = "5";
+        sliderGamma.step = "0.1";
+        sliderGamma.value = "1";
+        gammaContainer.appendChild(labelGamma);
+        gammaContainer.appendChild(sliderGamma);
+        controls.appendChild(gammaContainer);
+
+        // Dithering dropdown
+        const ditheringContainer = document.createElement("div");
+        ditheringContainer.className = "slider-container";
+        const labelDithering = document.createElement("label");
+        labelDithering.innerText = "Dithering:";
+        selectDithering = document.createElement("select");
+        const ditheringOptions = [
+          { value: "none", text: "No Texture" },
+          { value: "floyd-steinberg", text: "Floyd-Steinberg" },
+          { value: "ordered", text: "Ordered" },
+          { value: "noise", text: "Noise" }
+        ];
+        ditheringOptions.forEach(opt => {
+          const optEl = document.createElement("option");
+          optEl.value = opt.value;
+          optEl.text = opt.text;
+          selectDithering.appendChild(optEl);
+        });
+        ditheringContainer.appendChild(labelDithering);
+        ditheringContainer.appendChild(selectDithering);
+        controls.appendChild(ditheringContainer);
+
+        // Generate button
+        btnGenerate = document.createElement("button");
+        btnGenerate.innerText = "Generate";
+        controls.appendChild(btnGenerate);
+
+        root.appendChild(controls);
+
+        // Add event listeners to update canvas on control changes
+        [sliderGrid, sliderBrightness, sliderContrast, sliderGamma, selectDithering].forEach(control => {
+          control.addEventListener("input", updateCanvas);
+        });
+
+        btnGenerate.addEventListener("click", () => {
+          const dataURL = canvas.toDataURL("image/png").split(",")[1];
+          parent.postMessage({ pluginMessage: { type: "apply-effect", imageData: dataURL } }, "*");
+        });
+      }
+
+      // Function to update the canvas with a basic halftone effect
+      function updateCanvas() {
+        if (!originalImage || !canvas || !ctx) return;
+        canvas.width = originalImage.width;
+        canvas.height = originalImage.height;
+
+        // Draw original image first
+        ctx.drawImage(originalImage, 0, 0);
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const gridSize = Number(sliderGrid.value);
+        const maxRadius = gridSize / 2;
+        for (let y = 0; y < canvas.height; y += gridSize) {
+          for (let x = 0; x < canvas.width; x += gridSize) {
+            let totalLum = 0;
+            let count = 0;
+            for (let j = 0; j < gridSize; j++) {
+              for (let i = 0; i < gridSize; i++) {
+                const px = x + i;
+                const py = y + j;
+                if (px < canvas.width && py < canvas.height) {
+                  const index = (py * canvas.width + px) * 4;
+                  const r = imgData.data[index];
+                  const g = imgData.data[index + 1];
+                  const b = imgData.data[index + 2];
+                  const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+                  totalLum += lum;
+                  count++;
+                }
+              }
+            }
+            const avgLum = totalLum / count;
+            // For now, ignore brightness, contrast, gamma, and dithering.
+            const radius = maxRadius * (1 - avgLum / 255);
+            ctx.beginPath();
+            ctx.arc(x + gridSize / 2, y + gridSize / 2, radius, 0, 2 * Math.PI);
+            ctx.fillStyle = "black";
+            ctx.fill();
+          }
+        }
+      }
+
+      // Listen for messages from code.ts
       window.onmessage = (event) => {
         const msg = event.data.pluginMessage;
         console.log("UI received message:", msg);
-        if (msg && msg.type === "load-image") {
-          document.getElementById("content").innerHTML =
-            '<img src="data:image/png;base64,' + msg.data + '" style="max-width:100%;"/>';
-        } else if (msg && msg.type === "no-image") {
-          document.getElementById("content").innerText = "No image selected.";
+        if (msg.type === "load-image") {
+          const imageDataURL = "data:image/png;base64," + msg.data;
+          const img = new Image();
+          img.onload = () => {
+            originalImage = img;
+            setupUI();
+            updateCanvas();
+          };
+          img.src = imageDataURL;
+        } else if (msg.type === "no-image") {
+          document.getElementById("root").innerText = "No image selected.";
         }
       };
+
+      console.log("UI script loaded");
     </script>
   </body>
 </html>

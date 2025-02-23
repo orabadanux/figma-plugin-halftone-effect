@@ -1,4 +1,3 @@
-// vite.config.ts
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { resolve } from "path";
@@ -6,6 +5,7 @@ import { resolve } from "path";
 const isPluginBuild = process.env.BUILD_TARGET === "plugin";
 
 export default defineConfig({
+  base: './',  // Use relative paths for assets
   plugins: isPluginBuild ? [] : [react()],
   build: {
     target: "chrome58", // Transpile code to a version compatible with Figma's runtime

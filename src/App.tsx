@@ -1,4 +1,3 @@
-// src/App.tsx
 import React, { useEffect, useRef, useState } from "react";
 
 const styles = {
@@ -7,117 +6,112 @@ const styles = {
     fontFamily: "Arial, sans-serif",
     textAlign: "center" as const,
   },
-  placeholder: {
-    padding: "20px",
-    border: "2px dashed #888",
-    borderRadius: "10px",
-    background: "#f4f4f4",
-    color: "#555",
-    fontSize: "16px",
-    marginBottom: "20px",
-  },
   canvas: {
+    border: "1px solid #ddd",
     maxWidth: "100%",
-    borderRadius: "8px",
+    marginBottom: "10px",
+  },
+  sliderContainer: {
+    margin: "10px 0",
+  },
+  slider: {
+    width: "80%",
   },
   button: {
-    padding: "10px 20px",
-    fontSize: "16px",
-    border: "none",
-    background: "#007bff",
-    color: "white",
-    borderRadius: "5px",
-    cursor: "pointer",
     marginTop: "10px",
+    padding: "8px 16px",
+    fontSize: "16px",
   },
 };
 
 const App = () => {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
-  const [gridSize, setGridSize] = useState(50);
+  const [gridSize, setGridSize] = useState(10);
   const [brightness, setBrightness] = useState(50);
-  const [contrast, setContrast] = useState(0);
+  const [contrast, setContrast] = useState(50);
   const [gamma, setGamma] = useState(1);
   const [dithering, setDithering] = useState("none");
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [originalImage, setOriginalImage] = useState<HTMLImageElement | null>(null);
 
-  // Listen for messages from plugin code
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imageRef = useRef<HTMLImageElement | null>(null);
+
+  // Listen for messages from the plugin main code.
   useEffect(() => {
     window.onmessage = (event) => {
       const msg = event.data.pluginMessage;
-      console.log("📩 Message received in UI:", msg);
-
       if (msg.type === "load-image") {
-        const src = `data:image/png;base64,${msg.data}`;
-        setImageSrc(src);
+        setImageSrc(`data:image/png;base64,${msg.data}`);
       } else if (msg.type === "no-image") {
         setImageSrc(null);
       }
     };
   }, []);
 
-  // Load the image when imageSrc changes
+  // When imageSrc updates, load the image and draw it.
   useEffect(() => {
     if (imageSrc) {
       const img = new Image();
       img.onload = () => {
-        setOriginalImage(img);
-        updatePreview(img);
+        imageRef.current = img;
+        updateCanvas();
       };
       img.src = imageSrc;
     }
   }, [imageSrc]);
 
-  // Re-render the canvas whenever any parameter changes
+  // Update canvas when any parameter changes.
   useEffect(() => {
-    if (originalImage) {
-      updatePreview(originalImage);
+    if (imageRef.current) {
+      updateCanvas();
     }
-  }, [gridSize, brightness, contrast, gamma, dithering, originalImage]);
+  }, [gridSize, brightness, contrast, gamma, dithering]);
 
-  const updatePreview = (img: HTMLImageElement) => {
+  const updateCanvas = () => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx || !imageRef.current) return;
 
-    // Set canvas size to match the image
-    canvas.width = img.width;
-    canvas.height = img.height;
+    // Set canvas dimensions to match the image.
+    canvas.width = imageRef.current.width;
+    canvas.height = imageRef.current.height;
 
-    // Draw the image to get pixel data
-    ctx.drawImage(img, 0, 0);
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    // Draw the original image.
+    ctx.drawImage(imageRef.current, 0, 0);
 
-    // Clear the canvas to draw the halftone effect
+    // Get the image data.
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    // Clear the canvas for drawing the halftone effect.
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Loop through the image in cells.
     const cellSize = gridSize;
     const maxRadius = cellSize / 2;
-
-    // Loop over grid cells
     for (let y = 0; y < canvas.height; y += cellSize) {
       for (let x = 0; x < canvas.width; x += cellSize) {
-        let totalBrightness = 0;
+        let totalLuminance = 0;
         let count = 0;
+        // Loop through each cell's pixels.
         for (let j = 0; j < cellSize; j++) {
           for (let i = 0; i < cellSize; i++) {
-            if (x + i < canvas.width && y + j < canvas.height) {
-              const index = ((y + j) * canvas.width + (x + i)) * 4;
-              const r = imageData.data[index];
-              const g = imageData.data[index + 1];
-              const b = imageData.data[index + 2];
-              // Calculate luminance (you can later incorporate brightness/contrast adjustments)
+            const px = x + i;
+            const py = y + j;
+            if (px < canvas.width && py < canvas.height) {
+              const index = (py * canvas.width + px) * 4;
+              const r = imgData.data[index];
+              const g = imgData.data[index + 1];
+              const b = imgData.data[index + 2];
+              // Compute luminance using standard weights.
               const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-              totalBrightness += lum;
+              totalLuminance += lum;
               count++;
             }
           }
         }
-        const avgBrightness = totalBrightness / count;
-        // Invert brightness so dark areas produce larger circles
-        const radius = maxRadius * (1 - avgBrightness / 255);
+        const avgLuminance = totalLuminance / count;
+        // Invert luminance so that darker areas produce larger dots.
+        const radius = maxRadius * (1 - avgLuminance / 255);
 
+        // Draw the circle for the halftone effect.
         ctx.beginPath();
         ctx.arc(x + cellSize / 2, y + cellSize / 2, radius, 0, Math.PI * 2);
         ctx.fillStyle = "black";
@@ -128,81 +122,84 @@ const App = () => {
 
   const applyEffect = () => {
     const canvas = canvasRef.current;
-    if (!canvas) {
-      console.error("Canvas not found.");
-      return;
-    }
-    // Get the processed image data from the canvas
+    if (!canvas) return;
+    // Export the current canvas as a PNG (without header) and send it to the plugin.
     const dataURL = canvas.toDataURL("image/png").split(",")[1];
-    parent.postMessage(
-      { pluginMessage: { type: "apply-effect", imageData: dataURL } },
-      "*"
-    );
+    parent.postMessage({ pluginMessage: { type: "apply-effect", imageData: dataURL } }, "*");
   };
 
   return (
     <div style={styles.container}>
-      <h2>Halftone Effect</h2>
+      <h2>Halftone Effect Plugin UI</h2>
       {!imageSrc ? (
-        <div style={styles.placeholder}>
-          <p>📌 Select an image in Figma to start</p>
-        </div>
+        <div>No image selected</div>
       ) : (
-        <canvas ref={canvasRef} style={styles.canvas} />
+        <>
+          <canvas ref={canvasRef} style={styles.canvas} />
+          <div style={styles.sliderContainer}>
+            <label>Grid Size: {gridSize}</label>
+            <br />
+            <input
+              type="range"
+              min="1"
+              max="100"
+              value={gridSize}
+              style={styles.slider}
+              onChange={(e) => setGridSize(Number(e.target.value))}
+            />
+          </div>
+          <div style={styles.sliderContainer}>
+            <label>Brightness: {brightness}</label>
+            <br />
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={brightness}
+              style={styles.slider}
+              onChange={(e) => setBrightness(Number(e.target.value))}
+            />
+          </div>
+          <div style={styles.sliderContainer}>
+            <label>Contrast: {contrast}</label>
+            <br />
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={contrast}
+              style={styles.slider}
+              onChange={(e) => setContrast(Number(e.target.value))}
+            />
+          </div>
+          <div style={styles.sliderContainer}>
+            <label>Gamma: {gamma}</label>
+            <br />
+            <input
+              type="range"
+              min="0.1"
+              max="5"
+              step="0.1"
+              value={gamma}
+              style={styles.slider}
+              onChange={(e) => setGamma(Number(e.target.value))}
+            />
+          </div>
+          <div style={styles.sliderContainer}>
+            <label>Dithering: </label>
+            <br />
+            <select value={dithering} onChange={(e) => setDithering(e.target.value)}>
+              <option value="none">None</option>
+              <option value="floyd-steinberg">Floyd-Steinberg</option>
+              <option value="ordered">Ordered</option>
+              <option value="noise">Noise</option>
+            </select>
+          </div>
+          <button style={styles.button} onClick={applyEffect}>
+            Generate
+          </button>
+        </>
       )}
-      <div>
-        <label>Grid Size: {gridSize}</label>
-        <input
-          type="range"
-          min="1"
-          max="100"
-          value={gridSize}
-          onChange={(e) => setGridSize(Number(e.target.value))}
-        />
-      </div>
-      <div>
-        <label>Brightness: {brightness}</label>
-        <input
-          type="range"
-          min="0"
-          max="100"
-          value={brightness}
-          onChange={(e) => setBrightness(Number(e.target.value))}
-        />
-      </div>
-      <div>
-        <label>Contrast: {contrast}</label>
-        <input
-          type="range"
-          min="-100"
-          max="100"
-          value={contrast}
-          onChange={(e) => setContrast(Number(e.target.value))}
-        />
-      </div>
-      <div>
-        <label>Gamma: {gamma}</label>
-        <input
-          type="range"
-          min="0.1"
-          max="5"
-          step="0.1"
-          value={gamma}
-          onChange={(e) => setGamma(Number(e.target.value))}
-        />
-      </div>
-      <div>
-        <label>Dithering:</label>
-        <select value={dithering} onChange={(e) => setDithering(e.target.value)}>
-          <option value="none">No Texture</option>
-          <option value="floyd-steinberg">Floyd-Steinberg</option>
-          <option value="ordered">Ordered</option>
-          <option value="noise">Noise</option>
-        </select>
-      </div>
-      <button style={styles.button} onClick={applyEffect}>
-        Apply
-      </button>
     </div>
   );
 };
