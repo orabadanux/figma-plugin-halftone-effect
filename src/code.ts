@@ -39,6 +39,9 @@
     return output;
   }
 
+  // Global variable to store exported image dimensions (if available)
+  let originalImageDimensions: { width: number; height: number } | null = null;
+
   // Flag to avoid overlapping export calls
   let isExporting = false;
 
@@ -76,7 +79,6 @@
       return;
     }
 
-    // Cast the node as a SceneNode that implements ExportMixin & GeometryMixin.
     const node = selection[0] as SceneNode & ExportMixin & GeometryMixin;
     console.log("✅ Exportable node detected. Node type:", node.type);
     console.log("exportAsync property:", node.exportAsync);
@@ -89,7 +91,6 @@
       return;
     }
 
-    // Define export settings with a scale constraint.
     const exportSettings = { format: "PNG", constraint: { type: "SCALE", value: 1 } } as any;
     console.log("Export settings:", exportSettings);
 
@@ -99,42 +100,17 @@
       console.log("Result of exportAsync call:", imageBytes);
       const base64 = uint8ArrayToBase64(imageBytes);
       console.log("📩 Sending image to UI");
+      // Save dimensions if available (fallback if missing)
+      originalImageDimensions = { width: (node as any).width || 300, height: (node as any).height || 300 };
       safePostMessage({ type: "load-image", data: base64 });
     } catch (error) {
       console.error("❌ Error exporting image:", error);
-
-      // Fallback: try flattening the node.
-      if (typeof figma.flatten === "function" && node.parent) {
-        try {
-          console.log("Attempting to flatten node:", node);
-          const flattened = figma.flatten([node], node.parent);
-          console.log("Flattened node:", flattened);
-          console.log("Flattened node type:", flattened.type);
-          console.log("Flattened exportAsync property:", (flattened as any).exportAsync);
-          console.log("Type of flattened exportAsync property:", typeof (flattened as any).exportAsync);
-          if (typeof (flattened as any).exportAsync === "function") {
-            console.log("About to call exportAsync on flattened node");
-            const imageBytes = (await (flattened as any).exportAsync(exportSettings)) as Uint8Array;
-            console.log("Result of exportAsync call on flattened node:", imageBytes);
-            const base64 = uint8ArrayToBase64(imageBytes);
-            console.log("📩 Sending flattened image to UI");
-            safePostMessage({ type: "load-image", data: base64 });
-            // Skipping removal for now.
-          } else {
-            figma.notify("Flattened node is not exportable.");
-          }
-        } catch (e) {
-          console.error("❌ Error exporting flattened node:", e);
-          figma.notify("Error exporting image.");
-        }
-      } else {
-        figma.notify("Error exporting image.");
-      }
+      figma.notify("Error exporting image.");
     }
     isExporting = false;
   }
 
-  // Safe postMessage with try/catch.
+  // Safe postMessage function.
   function safePostMessage(msg: any) {
     try {
       figma.ui.postMessage(msg);
@@ -143,18 +119,27 @@
     }
   }
 
+  // Listen for messages from the UI.
   figma.ui.onmessage = function (msg) {
     console.log("📩 Message from UI:", msg);
     if (msg.type === "apply-effect") {
       const imgBytes = base64ToUint8Array(msg.imageData);
       const newImage = figma.createImage(imgBytes);
-      const node = figma.currentPage.selection[0] as SceneNode & ExportMixin & GeometryMixin;
-      if (node && node.fills && Array.isArray(node.fills)) {
-        node.fills = [{ type: "IMAGE", scaleMode: "FILL", imageHash: newImage.hash }];
-        figma.notify("Halftone effect applied!");
+      // Create a new rectangle node.
+      const rect = figma.createRectangle();
+      if (originalImageDimensions) {
+        rect.resize(originalImageDimensions.width, originalImageDimensions.height);
       } else {
-        figma.notify("This node does not support image fills.");
+        rect.resize(300, 300);
       }
+      rect.fills = [{ type: "IMAGE", scaleMode: "FILL", imageHash: newImage.hash }];
+      // Position the new rectangle at the center of the viewport.
+      rect.x = figma.viewport.center.x - rect.width / 2;
+      rect.y = figma.viewport.center.y - rect.height / 2;
+      figma.currentPage.appendChild(rect);
+      figma.notify("New halftoned image created!");
+      // Close the plugin after generating the new image.
+      figma.closePlugin();
     }
   };
 
