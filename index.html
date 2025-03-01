@@ -3,75 +3,52 @@
   <head>
     <meta charset="UTF-8" />
     <title>Halftone Effect Plugin UI</title>
-    <!-- Tailwind CSS via CDN -->
+    <!-- Tailwind CSS -->
     <link
       href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
       rel="stylesheet"
     />
-    <style>
-      .spinner {
-        border: 4px solid rgba(0,0,0,0.1);
-        border-left-color: #000000;
-        border-radius: 50%;
-        width: 36px;
-        height: 36px;
-        animation: spin 1s linear infinite;
-      }
-      @keyframes spin {
-        to { transform: rotate(360deg); }
-      }
-    </style>
   </head>
-  <body class="bg-gray-50">
-    <div id="root" class="max-w-xl mx-auto p-4">
-      <h1 class="text-2xl font-bold mb-4">Halftone Effect Plugin UI</h1>
-      <!-- Loader element; will remain until the image is loaded -->
-      <div id="loader" class="flex items-center justify-center h-20">
-        <div class="spinner"></div>
-        <span class="ml-2">Loading...</span>
+  <body class="bg-white">
+    <div id="root" class="max-w-xl mx-auto p-4 min-h-screen flex flex-col items-center justify-center">
+
+      <!-- Placeholder container, centered text -->
+      <div id="placeholder-container" class="w-full flex items-center justify-center">
+        <div id="placeholder" class="text-gray-600 text-lg">Select an image</div>
       </div>
-      <div id="placeholder" class="text-gray-600">No image selected.</div>
     </div>
 
     <script>
-      // --- Inlined UI Logic for Figma Plugin with Tailwind, Loader, and Controls ---
-
-      // Global variables for image and UI elements
       let originalImage = null;
       let canvas, ctx;
       let sliderGrid, selectShape, colorPicker, btnGenerate;
       const shapes = ["Circle", "Square", "Cross"];
 
-      // Function to set up the UI once an image is loaded.
-      // This function will remove the loader and placeholder and then create the canvas and controls.
       function setupUI() {
         const root = document.getElementById("root");
 
-        // Remove loader and placeholder if present.
-        const loader = document.getElementById("loader");
-        if (loader) loader.remove();
-        const placeholder = document.getElementById("placeholder");
-        if (placeholder) placeholder.remove();
+        // HIDE placeholder instead of removing it
+        const placeholderContainer = document.getElementById("placeholder-container");
+        if (placeholderContainer) placeholderContainer.style.display = "none";
 
-        // Create canvas.
-        const canvasEl = document.createElement("canvas");
-        canvasEl.id = "previewCanvas";
-        canvasEl.className = "border border-gray-300 mb-4 w-full";
-        root.appendChild(canvasEl);
-        canvas = canvasEl;
+        // Append canvas
+        canvas = document.createElement("canvas");
+        canvas.id = "previewCanvas";
+        canvas.className = "border border-gray-300 mb-4 w-full";
+        root.appendChild(canvas);
         ctx = canvas.getContext("2d");
 
-        // Create controls container.
+        // Controls container
         const controls = document.createElement("div");
         controls.id = "controls";
-        controls.className = "space-y-4";
+        controls.className = "space-y-4 w-full";
 
-        // Grid Size slider (range 1-50)
+        // Dot Size slider
         const gridContainer = document.createElement("div");
         gridContainer.className = "slider-container";
         const labelGrid = document.createElement("label");
         labelGrid.className = "block font-medium";
-        labelGrid.innerText = "Grid Size";
+        labelGrid.innerText = "Dot Size";
         sliderGrid = document.createElement("input");
         sliderGrid.id = "gridSlider";
         sliderGrid.type = "range";
@@ -83,11 +60,11 @@
         gridContainer.appendChild(sliderGrid);
         controls.appendChild(gridContainer);
 
-        // Combined row for Dot Shape and Dot Color.
+        // Combined row for Dot Shape and Dot Color
         const combinedRow = document.createElement("div");
         combinedRow.className = "flex flex-row items-center space-x-4";
 
-        // Dot Shape dropdown.
+        // Dot Shape dropdown
         const shapeContainer = document.createElement("div");
         shapeContainer.className = "flex-1";
         const labelShape = document.createElement("label");
@@ -106,7 +83,7 @@
         shapeContainer.appendChild(selectShape);
         combinedRow.appendChild(shapeContainer);
 
-        // Dot Color picker.
+        // Dot Color picker
         const colorContainer = document.createElement("div");
         colorContainer.className = "flex-1";
         const labelColor = document.createElement("label");
@@ -116,14 +93,14 @@
         colorPicker.id = "colorPicker";
         colorPicker.type = "color";
         colorPicker.value = "#000000";
-        colorPicker.className = "w-full h-12 p-0 border-none";
+        colorPicker.className = "w-full h-12 p-0 border-none rounded";
         colorContainer.appendChild(labelColor);
         colorContainer.appendChild(colorPicker);
         combinedRow.appendChild(colorContainer);
 
         controls.appendChild(combinedRow);
 
-        // Generate button.
+        // Generate button
         btnGenerate = document.createElement("button");
         btnGenerate.id = "generateBtn";
         btnGenerate.innerText = "Generate";
@@ -132,31 +109,30 @@
 
         root.appendChild(controls);
 
-        // Add event listeners.
+        // Event listeners
         [sliderGrid, selectShape, colorPicker].forEach((control) => {
           control.addEventListener("input", updateCanvas);
         });
+
         btnGenerate.addEventListener("click", () => {
           const dataURL = canvas.toDataURL("image/png").split(",")[1];
           parent.postMessage({ pluginMessage: { type: "apply-effect", imageData: dataURL } }, "*");
         });
       }
 
-      // Function to update the canvas with a basic halftone effect using only grid size.
       function updateCanvas() {
         if (!originalImage || !canvas || !ctx) return;
         canvas.width = originalImage.width;
         canvas.height = originalImage.height;
 
-        // Draw original image to get pixel data.
         ctx.drawImage(originalImage, 0, 0);
         const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         const gridSize = Number(sliderGrid.value);
         const maxRadius = gridSize / 2;
-        const shape = selectShape.value; // "Circle", "Square", "Cross"
-        const dotColor = colorPicker.value; // e.g., "#000000"
+        const shape = selectShape.value;
+        const dotColor = colorPicker.value;
 
         for (let y = 0; y < canvas.height; y += gridSize) {
           for (let x = 0; x < canvas.width; x += gridSize) {
@@ -172,7 +148,7 @@
                   const g = imgData.data[idx + 1];
                   const b = imgData.data[idx + 2];
                   const a = imgData.data[idx + 3];
-                  if (a >= 128) { // Only consider opaque pixels.
+                  if (a >= 128) {
                     const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
                     totalLum += lum;
                     validCount++;
@@ -211,8 +187,6 @@
         if (msg.type === "load-image") {
           const imageDataURL = "data:image/png;base64," + msg.data;
           const img = new Image();
-          // Show loader until the image loads
-          // (The initial HTML already shows the loader.)
           img.onload = () => {
             originalImage = img;
             setupUI();
@@ -220,7 +194,7 @@
           };
           img.src = imageDataURL;
         } else if (msg.type === "no-image") {
-          document.getElementById("root").innerText = "Select an image.";
+          document.getElementById("placeholder-container").style.display = "flex";
         }
       };
 

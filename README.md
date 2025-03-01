@@ -1,50 +1,20 @@
-# React + TypeScript + Vite
+# Halftone Effect Plugin
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Halftone Effect Plugin is a simple tool for applying halftone-style patterns to images inside Figma. Convert any image into a **dot matrix** effect using customizable **dot size, shape, and color**.
 
-Currently, two official plugins are available:
+## Features
+- **Dot Size**: Adjust the density and size of the dots.
+- **Dot Shape**: Choose between **circles, squares, or crosses**.
+- **Dot Color**: Select any color for the dots.
+- **Creates a New Image**: The original image remains untouched.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## How to Use
+1. Select an **image** in Figma.
+2. Open the **Halftone Effect Plugin**.
+3. Adjust the **dot size, shape, and color**.
+4. Click **Generate** to create a new halftoned image.
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
-
-- Configure the top-level `parserOptions` property like this:
-
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
-
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
-
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
-
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
+## Notes
+- Works best with **high-contrast images**.
+- Transparent backgrounds remain unfilled.
+- The plugin **does not modify the original image**, it generates a new one.

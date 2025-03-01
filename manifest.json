@@ -1,8 +1,12 @@
 {
   "name": "Halftone Effect Plugin",
-  "id": "halftone-effect-plugin",
+  "id": "1477582845958874564",
   "api": "1.0.0",
   "main": "dist/plugin/code.js",
   "ui": "dist/ui/index.html",
-  "editorType": ["figma"]
+  "editorType": ["figma"],
+  "networkAccess": {
+    "allowedDomains": ["none"]
+  },
+  "documentAccess": "dynamic-page"
 }

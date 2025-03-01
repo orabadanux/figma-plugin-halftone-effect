@@ -39,24 +39,23 @@
     return output;
   }
 
-  // Global variable to store exported image dimensions (if available)
+  // Global variable to store exported image dimensions.
   let originalImageDimensions: { width: number; height: number } | null = null;
-
-  // Flag to avoid overlapping export calls
+  // Flag to avoid overlapping export calls.
   let isExporting = false;
 
-  // Open the UI. Figma loads the external HTML file specified in manifest.json.
+  // Open the UI (HTML specified in manifest.json).
   figma.showUI(__html__, { width: 420, height: 550 });
   console.log("🔹 Plugin UI opened");
 
-  // Send initial UI state (no image)
+  // Send initial UI state.
   try {
     figma.ui.postMessage({ type: "no-image" });
   } catch (e) {
     console.error("Error sending initial message to UI:", e);
   }
 
-  // Listen for selection changes
+  // Listen for selection changes.
   figma.on("selectionchange", () => {
     console.log("📌 Selection changed");
     updateSelectedImage();
@@ -81,11 +80,8 @@
 
     const node = selection[0] as SceneNode & ExportMixin & GeometryMixin;
     console.log("✅ Exportable node detected. Node type:", node.type);
-    console.log("exportAsync property:", node.exportAsync);
-    console.log("Type of exportAsync property:", typeof node.exportAsync);
-
-    if (typeof node.exportAsync !== "function" || !("parent" in node)) {
-      console.log("🚨 Node does not implement exportAsync or lacks a parent.");
+    if (typeof node.exportAsync !== "function") {
+      console.log("🚨 Node does not implement exportAsync.");
       safePostMessage({ type: "no-image" });
       isExporting = false;
       return;
@@ -100,8 +96,7 @@
       console.log("Result of exportAsync call:", imageBytes);
       const base64 = uint8ArrayToBase64(imageBytes);
       console.log("📩 Sending image to UI");
-      // Save dimensions if available (fallback if missing)
-      originalImageDimensions = { width: (node as any).width || 300, height: (node as any).height || 300 };
+      originalImageDimensions = { width: node.width || 300, height: node.height || 300 };
       safePostMessage({ type: "load-image", data: base64 });
     } catch (error) {
       console.error("❌ Error exporting image:", error);
@@ -110,7 +105,6 @@
     isExporting = false;
   }
 
-  // Safe postMessage function.
   function safePostMessage(msg: any) {
     try {
       figma.ui.postMessage(msg);
@@ -125,7 +119,6 @@
     if (msg.type === "apply-effect") {
       const imgBytes = base64ToUint8Array(msg.imageData);
       const newImage = figma.createImage(imgBytes);
-      // Create a new rectangle node.
       const rect = figma.createRectangle();
       if (originalImageDimensions) {
         rect.resize(originalImageDimensions.width, originalImageDimensions.height);
@@ -133,17 +126,15 @@
         rect.resize(300, 300);
       }
       rect.fills = [{ type: "IMAGE", scaleMode: "FILL", imageHash: newImage.hash }];
-      // Position the new rectangle at the center of the viewport.
       rect.x = figma.viewport.center.x - rect.width / 2;
       rect.y = figma.viewport.center.y - rect.height / 2;
       figma.currentPage.appendChild(rect);
       figma.notify("New halftoned image created!");
-      // Close the plugin after generating the new image.
       figma.closePlugin();
     }
   };
 
-  // Base64 conversion functions using our polyfills.
+  // Base64 conversion functions.
   function uint8ArrayToBase64(bytes: Uint8Array): string {
     console.log("Converting Uint8Array to base64 using polyfill.");
     let binary = "";
