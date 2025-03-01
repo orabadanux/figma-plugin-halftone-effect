@@ -18,3 +18,6 @@ Halftone Effect Plugin is a simple tool for applying halftone-style patterns to 
 - Works best with **high-contrast images**.
 - Transparent backgrounds remain unfilled.
 - The plugin **does not modify the original image**, it generates a new one.
+
+## Link to Figma plugin
+TBD
