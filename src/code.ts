@@ -1,6 +1,5 @@
 // src/code.ts
 (function () {
-  // Polyfill for btoa: converts a binary string to a base64 encoded string.
   function btoaPolyfill(input: string): string {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let output = "";
@@ -17,7 +16,6 @@
     return output;
   }
 
-  // Polyfill for atob: converts a base64 encoded string to a binary string.
   function atobPolyfill(input: string): string {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let str = input.replace(/=+$/, "");
@@ -39,23 +37,18 @@
     return output;
   }
 
-  // Global variable to store exported image dimensions.
   let originalImageDimensions: { width: number; height: number } | null = null;
-  // Flag to avoid overlapping export calls.
   let isExporting = false;
 
-  // Open the UI (HTML specified in manifest.json).
   figma.showUI(__html__, { width: 420, height: 550 });
   console.log("🔹 Plugin UI opened");
 
-  // Send initial UI state.
   try {
     figma.ui.postMessage({ type: "no-image" });
   } catch (e) {
     console.error("Error sending initial message to UI:", e);
   }
 
-  // Listen for selection changes.
   figma.on("selectionchange", () => {
     console.log("📌 Selection changed");
     updateSelectedImage();
@@ -67,7 +60,6 @@
       return;
     }
     isExporting = true;
-
     const selection = figma.currentPage.selection;
     console.log("🔎 Current Selection:", selection);
 
@@ -113,7 +105,6 @@
     }
   }
 
-  // Listen for messages from the UI.
   figma.ui.onmessage = function (msg) {
     console.log("📩 Message from UI:", msg);
     if (msg.type === "apply-effect") {
@@ -134,7 +125,6 @@
     }
   };
 
-  // Base64 conversion functions.
   function uint8ArrayToBase64(bytes: Uint8Array): string {
     console.log("Converting Uint8Array to base64 using polyfill.");
     let binary = "";
