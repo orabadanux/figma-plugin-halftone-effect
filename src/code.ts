@@ -41,7 +41,6 @@
   let isExporting = false;
 
   figma.showUI(__html__, { width: 420, height: 550 });
-  console.log("🔹 Plugin UI opened");
 
   try {
     figma.ui.postMessage({ type: "no-image" });
@@ -50,48 +49,37 @@
   }
 
   figma.on("selectionchange", () => {
-    console.log("📌 Selection changed");
     updateSelectedImage();
   });
 
   async function updateSelectedImage() {
     if (isExporting) {
-      console.log("Export already in progress; skipping update.");
       return;
     }
     isExporting = true;
     const selection = figma.currentPage.selection;
-    console.log("🔎 Current Selection:", selection);
 
     if (selection.length !== 1) {
-      console.log("🚨 No valid exportable image selected (not exactly one node)");
       safePostMessage({ type: "no-image" });
       isExporting = false;
       return;
     }
 
     const node = selection[0] as SceneNode & ExportMixin & GeometryMixin;
-    console.log("✅ Exportable node detected. Node type:", node.type);
     if (typeof node.exportAsync !== "function") {
-      console.log("🚨 Node does not implement exportAsync.");
       safePostMessage({ type: "no-image" });
       isExporting = false;
       return;
     }
 
     const exportSettings = { format: "PNG", constraint: { type: "SCALE", value: 1 } } as any;
-    console.log("Export settings:", exportSettings);
 
     try {
-      console.log("About to call exportAsync on node:", node);
       const imageBytes = (await node.exportAsync(exportSettings)) as Uint8Array;
-      console.log("Result of exportAsync call:", imageBytes);
       const base64 = uint8ArrayToBase64(imageBytes);
-      console.log("📩 Sending image to UI");
       originalImageDimensions = { width: node.width || 300, height: node.height || 300 };
       safePostMessage({ type: "load-image", data: base64 });
     } catch (error) {
-      console.error("❌ Error exporting image:", error);
       figma.notify("Error exporting image.");
     }
     isExporting = false;
@@ -106,7 +94,6 @@
   }
 
   figma.ui.onmessage = function (msg) {
-    console.log("📩 Message from UI:", msg);
     if (msg.type === "apply-effect") {
       const imgBytes = base64ToUint8Array(msg.imageData);
       const newImage = figma.createImage(imgBytes);
@@ -120,24 +107,21 @@
       rect.x = figma.viewport.center.x - rect.width / 2;
       rect.y = figma.viewport.center.y - rect.height / 2;
       figma.currentPage.appendChild(rect);
-      figma.notify("New halftoned image created!");
+      figma.notify("New image created!");
       figma.closePlugin();
     }
   };
 
   function uint8ArrayToBase64(bytes: Uint8Array): string {
-    console.log("Converting Uint8Array to base64 using polyfill.");
     let binary = "";
     bytes.forEach((byte) => {
       binary += String.fromCharCode(byte);
     });
     const base64 = btoaPolyfill(binary);
-    console.log("Converted base64 string length:", base64.length);
     return base64;
   }
 
   function base64ToUint8Array(base64: string): Uint8Array {
-    console.log("Converting base64 to Uint8Array using polyfill.");
     const binaryStr = atobPolyfill(base64);
     const len = binaryStr.length;
     const bytes = new Uint8Array(len);
