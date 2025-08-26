@@ -22,6 +22,27 @@ const styles = {
     padding: "8px 16px",
     fontSize: "16px",
   },
+  supportBar: {
+    marginTop: "16px",
+    paddingTop: "12px",
+    borderTop: "1px solid #eee",
+    display: "flex",
+    justifyContent: "flex-end", // align right
+    gap: "8px",
+  },
+  imgButton: {
+    background: "none",
+    border: "none",
+    padding: 0,
+    cursor: "pointer",
+    lineHeight: 0,
+    display: "inline-flex",
+    alignItems: "center",
+  },
+  imgStyle: {
+    height: "32px",
+    display: "block",
+  },
 };
 
 const App = () => {
@@ -34,6 +55,10 @@ const App = () => {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
+
+  const openExternal = (url: string) => {
+    parent.postMessage({ pluginMessage: { type: "open-url", url } }, "*");
+  };
 
   // Listen for messages from the plugin main code.
   useEffect(() => {
@@ -125,7 +150,10 @@ const App = () => {
     if (!canvas) return;
     // Export the current canvas as a PNG (without header) and send it to the plugin.
     const dataURL = canvas.toDataURL("image/png").split(",")[1];
-    parent.postMessage({ pluginMessage: { type: "apply-effect", imageData: dataURL } }, "*");
+    parent.postMessage(
+      { pluginMessage: { type: "apply-effect", imageData: dataURL } },
+      "*"
+    );
   };
 
   return (
@@ -188,7 +216,10 @@ const App = () => {
           <div style={styles.sliderContainer}>
             <label>Dithering: </label>
             <br />
-            <select value={dithering} onChange={(e) => setDithering(e.target.value)}>
+            <select
+              value={dithering}
+              onChange={(e) => setDithering(e.target.value)}
+            >
               <option value="none">None</option>
               <option value="floyd-steinberg">Floyd-Steinberg</option>
               <option value="ordered">Ordered</option>
@@ -198,6 +229,34 @@ const App = () => {
           <button style={styles.button} onClick={applyEffect}>
             Generate
           </button>
+
+          {/* Support bar */}
+          <div style={styles.supportBar}>
+            <button
+              style={styles.imgButton}
+              onClick={() => openExternal("https://buymeacoffee.com/yourhandle")}
+              aria-label="Buy me a coffee ($5)"
+              title="Buy me a coffee ($5)"
+            >
+              <img
+                src="/bmac-btn.png"
+                alt="Buy me a coffee"
+                style={styles.imgStyle}
+              />
+            </button>
+            <button
+              style={styles.imgButton}
+              onClick={() => openExternal("https://ko-fi.com/yourhandle")}
+              aria-label="Tip on Ko-fi"
+              title="Tip on Ko-fi"
+            >
+              <img
+                src="/kofi-btn.png"
+                alt="Tip on Ko-fi"
+                style={styles.imgStyle}
+              />
+            </button>
+          </div>
         </>
       )}
     </div>
