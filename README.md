@@ -20,4 +20,4 @@ Halftone Effect Plugin is a simple tool for applying halftone-style patterns to 
 - The plugin **does not modify the original image**, it generates a new one.
 
 ## Link to Figma plugin
-TBD
+https://www.figma.com/community/plugin/1477582845958874564/halftone-effect
