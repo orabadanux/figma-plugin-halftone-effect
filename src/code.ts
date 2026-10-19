@@ -45,7 +45,8 @@
   let originalImageDimensions: { width: number; height: number } | null = null;
   let isExporting = false;
 
-  figma.showUI(__html__, { width: 420, height: 600 });
+  // The UI measures its own content and asks to be resized to fit.
+  figma.showUI(__html__, { width: 420, height: 524 });
 
   try {
     figma.ui.postMessage({ type: "no-image" });
@@ -105,6 +106,11 @@
   }
 
   figma.ui.onmessage = function (msg) {
+    if (msg.type === "resize" && typeof msg.height === "number") {
+      figma.ui.resize(420, Math.round(msg.height));
+      return;
+    }
+
     // apply-effect: place processed image on canvas and close plugin
     if (msg.type === "apply-effect") {
       const imgBytes = base64ToUint8Array(msg.imageData);
